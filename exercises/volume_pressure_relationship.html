@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<!-- TODO: replace randFromArray with <ul> when <ul> works -->
+<!-- TODO: make advanced version of this exercise, with negative vertical scaling, vertical and horizontal offsets -->
+<!-- TODO: might want to change the things already rendered in graphie to highlight the current thing being hinted; ie, make the thing just displayed at 2 stroke, reduce all previously renedred things to 1 storke -->
+<html data-require="math graphie math-format">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>The Volume-Pressure Relationship</title>
+    <script src="../khan-exercise.js"></script>
+    // <script type="text/javascript">
+    //     function decFrac( num ) {
+    //         return KhanUtil.decimalFraction( num, true, true, true );
+    //     }
+    // </script>
+<!--     <style type="text/css">
+        #answer_area input[type=text] {
+            width: 25px;
+        }
+    </style> -->
+</head>
+<body>
+    <div class="exercise">
+        <div class="vars">
+            <var id="PRESSURE">randRange(6, 14) / 10</var>
+        </div>
+
+        <div class="problems">
+            <div>
+                <div class="problem">
+                    <p>Make the pressure greater than <var>PRESSURE</var> bar.</p>
+                    <iframe width="495px" height="340px" frameborder="no" scrolling="no" src="http://lab.dev.concord.org/examples/interactives/embeddable.html#interactives/sam/gas-laws/3-volume-pressure-relationship.json"></iframe>
+                </div>
+
+                <div class="solution" data-type="multiple"><div style="font-size: 11px;">
+                </div></div>
+            </div>
+        </div>
+
+        <div class="hints">
+        </div>
+    </div>
+</body>
+</html>
