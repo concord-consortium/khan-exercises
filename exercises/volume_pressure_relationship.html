@@ -1,24 +1,63 @@
 <!DOCTYPE html>
-<!-- TODO: replace randFromArray with <ul> when <ul> works -->
-<!-- TODO: make advanced version of this exercise, with negative vertical scaling, vertical and horizontal offsets -->
-<!-- TODO: might want to change the things already rendered in graphie to highlight the current thing being hinted; ie, make the thing just displayed at 2 stroke, reduce all previously renedred things to 1 storke -->
-<html data-require="math graphie math-format">
+<html data-require="math graphie">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>The Volume-Pressure Relationship</title>
+    <script type="text/javascript">
+        window.injectIframe = function() {
+            $('#iframe-target').html('<iframe id="model" width="495px" height="340px" frameborder="no" scrolling="no" src="http://localhost:3000/examples/interactives/embeddable.html#interactives/sam/gas-laws/3-volume-pressure-relationship.json"></iframe>');
+
+            // http://stackoverflow.com/questions/1z993900/should-i-use-dom-ready-functions-if-my-scripts-are-at-the-end-of-the-body
+            // seems to suggest that the DOM will always be ready here. (Seeking more explicit docs!)
+            // Note that using a script tag to load jQuery in this document seems to cause the exercise
+            // framework to break (symptom: <var>s are not substituted.)
+            var iframe = document.getElementById('model'),
+                iframeOrigin = iframe.src.match(/(.*?\/\/.*?)\//)[1];
+
+            window.properties = {};
+
+            function post(message) {
+                try {
+                    iframe.contentWindow.postMessage(message, iframeOrigin);
+                } catch (e) {
+                    // Assume that failure means we can only post strings, not objects (IE9)
+                    // See http://dev.opera.com/articles/view/window-postmessage-messagechannel/#crossdoc
+                    iframe.contentWindow.postMessage(JSON.stringify(message), iframeOrigin);
+                }
+            }
+
+            function receiveMessage(message) {
+                var messageData, returnMessage;
+
+                if (message.source === iframe.contentWindow && message.origin === iframeOrigin) {
+                    messageData = message.data;
+                    if (typeof messageData === 'string') {
+                        messageData = JSON.parse(messageData);
+                    }
+                    if (messageData.type === 'hello') {
+                        // Handshake with the model
+                        post({
+                            type: 'hello',
+                            origin: window.location.href.match(/(.*?\/\/.*?)\//)[1]
+                        });
+
+                        post({
+                            type: 'observe',
+                            propertyName: 'kineticEnergy'
+                        });
+                    } else if (messageData.type === 'propertyValue') {
+                        window.properties[messageData.name] = messageData.value;
+                    }
+                }
+            };
+
+            window.addEventListener('message', receiveMessage, false);
+        };
+    </script>
     <script src="../khan-exercise.js"></script>
-    // <script type="text/javascript">
-    //     function decFrac( num ) {
-    //         return KhanUtil.decimalFraction( num, true, true, true );
-    //     }
-    // </script>
-<!--     <style type="text/css">
-        #answer_area input[type=text] {
-            width: 25px;
-        }
-    </style> -->
 </head>
 <body>
+
     <div class="exercise">
         <div class="vars">
             <var id="PRESSURE">randRange(6, 14) / 10</var>
@@ -28,16 +67,25 @@
             <div>
                 <div class="problem">
                     <p>Make the pressure greater than <var>PRESSURE</var> bar.</p>
-                    <iframe width="495px" height="340px" frameborder="no" scrolling="no" src="http://lab.dev.concord.org/examples/interactives/embeddable.html#interactives/sam/gas-laws/3-volume-pressure-relationship.json"></iframe>
-                </div>
+                    <div id="iframe-target"></div>
+                    <div class="graphie">
+                        // So, just including the iframe doesn't work because it gets detached and
+                        // then reattached to the DOM by the Khan exercise framework. This confuses
+                        // the postMessage protocol (we end up handshaking with a model that isn't
+                        // the one the student sees) plus, it's wasteful.
 
-                <div class="solution" data-type="multiple"><div style="font-size: 11px;">
-                </div></div>
+                        // A khan-exercises trick is that the text in a graphie gets evaled, after
+                        // the problem has been re-appended to the DOM.
+
+                        injectIframe();
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="hints">
         </div>
     </div>
+
 </body>
 </html>
