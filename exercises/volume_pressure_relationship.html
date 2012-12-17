@@ -4,10 +4,12 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>The Volume-Pressure Relationship</title>
     <script type="text/javascript">
-        window.LabExercise = {};
+        /*global LabExercise:true, $ */
+        /*jshint eqnull: true */
+        LabExercise = {};
 
         LabExercise.injectIframe = function() {
-            $('#iframe-target').html('<iframe id="model" width="495px" height="340px" frameborder="no" scrolling="no" src="http://lab.dev.concord.org/examples/interactives/embeddable.html#interactives/sam/gas-laws/3-volume-pressure-relationship.json"></iframe>');
+            $('#iframe-container').html('<iframe id="model" width="495px" height="340px" frameborder="no" scrolling="no" src="http://lab.dev.concord.org/examples/interactives/embeddable.html#interactives/sam/gas-laws/3-volume-pressure-relationship.json"></iframe>');
 
             // http://stackoverflow.com/questions/1z993900/should-i-use-dom-ready-functions-if-my-scripts-are-at-the-end-of-the-body
             // seems to suggest that the DOM will always be ready here. (Seeking more explicit docs!)
@@ -15,6 +17,7 @@
             // framework to break (symptom: <var>s are not substituted.)
             var iframe = document.getElementById('model'),
                 iframeOrigin = iframe.src.match(/(.*?\/\/.*?)\//)[1],
+
                 post = LabExercise.post = function(message) {
                     var iframe = document.getElementById('model');
                     try {
@@ -24,14 +27,14 @@
                         // See http://dev.opera.com/articles/view/window-postmessage-messagechannel/#crossdoc
                         iframe.contentWindow.postMessage(JSON.stringify(message), iframeOrigin);
                     }
-                }
+                };
 
             LabExercise.properties = {};
 
             function receiveMessage(message) {
                 var messageData,
-                    returnMessage,
-                    iframe = document.getElementById('model')
+                    iframe = document.getElementById('model'),
+                    volumeToDisplay;
 
                 if (message.source === iframe.contentWindow && message.origin === iframeOrigin) {
                     messageData = message.data;
@@ -54,13 +57,28 @@
                             type: 'observe',
                             propertyName: 'pressureProbeFiltered'
                         });
-                        if (LabExercise.showGuess) LabExercise.showGuess();
-                        LabExercise.handshakeFinished = true;
+
+                        // Data about the initial settings may be in the DOM! (showGuess works by
+                        // constructing div.problems for each guess up front, then simply appending
+                        // the appropriate div.problem to the DOM when the user navigates the
+                        // timeline to that guess)
+                        volumeToDisplay = $('#iframe-container').attr('data-volume');
+                        if (volumeToDisplay != null) {
+                            post({
+                                type: 'set',
+                                propertyName: 'volume',
+                                propertyValue: parseFloat(volumeToDisplay)
+                            });
+                        }
+
+                        post({
+                            type: 'play'
+                        });
                     } else if (messageData.type === 'propertyValue') {
                         LabExercise.properties[messageData.name] = messageData.value;
                     }
                 }
-            };
+            }
 
             window.addEventListener('message', receiveMessage, false);
         };
@@ -78,7 +96,9 @@
             <div>
                 <div class="problem">
                     <p>Make the pressure greater than <var>PRESSURE</var> bar.</p>
-                    <div id="iframe-target"></div>
+                    <div id="iframe-container">
+                        <div class="volume"></div>
+                    </div>
                     <div class="graphie">
                         // So, just including the iframe doesn't work because it gets detached and
                         // then reattached to the DOM by the Khan exercise framework. This confuses
@@ -87,7 +107,7 @@
 
                         // A khan-exercises trick is that the text in a graphie gets evaled, after
                         // the problem has been re-appended to the DOM.
-                        LabExercise.injectIframe(LabExercise.showGuess);
+                        LabExercise.injectIframe();
                     </div>
                 </div>
                 <div class="solution" data-type="custom">
@@ -99,23 +119,8 @@
                         return guess.pressure >= PRESSURE;
                     </div>
                     <div class="show-guess">
-                        // Not sure why this is not called with multiple guess values after page
-                        // load, and not called after navigate in the ?debug answer timeline
-                        console.log("showing guess: volume = " + guess.volume);
-                        // Contents of thsi function will appear after the iframe is loaded and we are talking to it
-                        LabExercise.showGuess = function() {
-                            LabExercise.post({
-                                type: 'set',
-                                propertyName: 'volume',
-                                propertyValue: guess.volume
-                            });
-                            LabExercise.post({
-                                type: 'tick',
-                                numTimes: 50
-                            });
-                        };
-
-                        if (LabExercise.handshakeFinished) LabExercise.showGuess();
+                        // Just set data-volume, and MW will configure itself when appended.
+                        $('#iframe-container').attr('data-volume', guess.volume);
                     </div>
                 </div>
             </div>
