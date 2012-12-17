@@ -43,7 +43,12 @@
 
                         post({
                             type: 'observe',
-                            propertyName: 'kineticEnergy'
+                            propertyName: 'volume'
+                        });
+
+                        post({
+                            type: 'observe',
+                            propertyName: 'pressureProbeFiltered'
                         });
                     } else if (messageData.type === 'propertyValue') {
                         window.properties[messageData.name] = messageData.value;
@@ -80,11 +85,22 @@
                         injectIframe();
                     </div>
                 </div>
+                <div class="solution" data-type="custom">
+                    <div class="instruction">
+                        Use the Volume buttons to modify the pressure.
+                    </div>
+                    <div class="guess"> { volume: window.properties.volume, pressure: window.properties.pressureProbeFiltered } </div>
+                    <div class="validator-function">
+                        return guess.pressure >= PRESSURE;
+                    </div>
+                    <div class="show-guess">
+                        // TODO (need to set the volume *and* run the model.)
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="hints">
-        </div>
+
     </div>
 
 </body>
