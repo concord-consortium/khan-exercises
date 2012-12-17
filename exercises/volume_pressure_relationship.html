@@ -4,7 +4,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>The Volume-Pressure Relationship</title>
     <script type="text/javascript">
-        window.injectIframe = function() {
+        window.LabExercise = {};
+
+        LabExercise.injectIframe = function() {
             $('#iframe-target').html('<iframe id="model" width="495px" height="340px" frameborder="no" scrolling="no" src="http://localhost:3000/examples/interactives/embeddable.html#interactives/sam/gas-laws/3-volume-pressure-relationship.json"></iframe>');
 
             // http://stackoverflow.com/questions/1z993900/should-i-use-dom-ready-functions-if-my-scripts-are-at-the-end-of-the-body
@@ -12,22 +14,24 @@
             // Note that using a script tag to load jQuery in this document seems to cause the exercise
             // framework to break (symptom: <var>s are not substituted.)
             var iframe = document.getElementById('model'),
-                iframeOrigin = iframe.src.match(/(.*?\/\/.*?)\//)[1];
-
-            window.properties = {};
-
-            function post(message) {
-                try {
-                    iframe.contentWindow.postMessage(message, iframeOrigin);
-                } catch (e) {
-                    // Assume that failure means we can only post strings, not objects (IE9)
-                    // See http://dev.opera.com/articles/view/window-postmessage-messagechannel/#crossdoc
-                    iframe.contentWindow.postMessage(JSON.stringify(message), iframeOrigin);
+                iframeOrigin = iframe.src.match(/(.*?\/\/.*?)\//)[1],
+                post = LabExercise.post = function(message) {
+                    var iframe = document.getElementById('model');
+                    try {
+                        iframe.contentWindow.postMessage(message, iframeOrigin);
+                    } catch (e) {
+                        // Assume that failure means we can only post strings, not objects (IE9)
+                        // See http://dev.opera.com/articles/view/window-postmessage-messagechannel/#crossdoc
+                        iframe.contentWindow.postMessage(JSON.stringify(message), iframeOrigin);
+                    }
                 }
-            }
+
+            LabExercise.properties = {};
 
             function receiveMessage(message) {
-                var messageData, returnMessage;
+                var messageData,
+                    returnMessage,
+                    iframe = document.getElementById('model')
 
                 if (message.source === iframe.contentWindow && message.origin === iframeOrigin) {
                     messageData = message.data;
@@ -50,8 +54,10 @@
                             type: 'observe',
                             propertyName: 'pressureProbeFiltered'
                         });
+                        if (LabExercise.showGuess) LabExercise.showGuess();
+                        LabExercise.handshakeFinished = true;
                     } else if (messageData.type === 'propertyValue') {
-                        window.properties[messageData.name] = messageData.value;
+                        LabExercise.properties[messageData.name] = messageData.value;
                     }
                 }
             };
@@ -81,20 +87,35 @@
 
                         // A khan-exercises trick is that the text in a graphie gets evaled, after
                         // the problem has been re-appended to the DOM.
-
-                        injectIframe();
+                        LabExercise.injectIframe(LabExercise.showGuess);
                     </div>
                 </div>
                 <div class="solution" data-type="custom">
                     <div class="instruction">
                         Use the Volume buttons to modify the pressure.
                     </div>
-                    <div class="guess"> { volume: window.properties.volume, pressure: window.properties.pressureProbeFiltered } </div>
+                    <div class="guess"> { volume: LabExercise.properties.volume, pressure: LabExercise.properties.pressureProbeFiltered } </div>
                     <div class="validator-function">
                         return guess.pressure >= PRESSURE;
                     </div>
                     <div class="show-guess">
-                        // TODO (need to set the volume *and* run the model.)
+                        // Not sure why this is not called with multiple guess values after page
+                        // load, and not called after navigate in the ?debug answer timeline
+                        console.log("showing guess: volume = " + guess.volume);
+                        // Contents of thsi function will appear after the iframe is loaded and we are talking to it
+                        LabExercise.showGuess = function() {
+                            LabExercise.post({
+                                type: 'set',
+                                propertyName: 'volume',
+                                propertyValue: guess.volume
+                            });
+                            LabExercise.post({
+                                type: 'tick',
+                                numTimes: 50
+                            });
+                        };
+
+                        if (LabExercise.handshakeFinished) LabExercise.showGuess();
                     </div>
                 </div>
             </div>
